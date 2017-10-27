@@ -12,3 +12,7 @@ Data input:
 * Balance - The higher the balance the faster the earth spins
 * Account Type - If a checking account then the sun will spin
 * Most Recent Transaction - The older a transaction is the faster the moon will orbit
+
+Libraries used:
+* THREE.js
+* Jquery
