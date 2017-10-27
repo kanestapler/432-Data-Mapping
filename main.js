@@ -117,15 +117,22 @@ function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
     //Earth spin rate is determined by account balance
-    earthMesh.rotation.y += 0.01;
-    earthPivot.rotation.y -= 0.01;
+    if (inputData.length > 0) {
+        var earthSpin = inputData[0][inputHeadersEnum.Balance] * 0.000001;
+        earthMesh.rotation.y += earthSpin;
+        earthPivot.rotation.y -= earthSpin;
+    }
     //If Checking Account then sun spins
     if (inputData.length > 0 && inputData[0][inputHeadersEnum.AccountType].toLowerCase() === 'checking') {
         sunMesh.rotation.y += 0.01;
     }
-    //Moon spin rate is determined by how long ago most recent transaction was (sooner==faster)
+    //Moon orbit speed is determined by how long ago most recent transaction was (sooner==slower)
+    if (inputData.length > 0) {
+        var moonOrbitSpeed = Date.daysBetween(mostRecentTransactionDate, new Date());
+        earthPivot.rotation.z += 0.01 * moonOrbitSpeed;
+    }
+    //Moon spin
     moonMesh.rotation.y += 0.01;
-    earthPivot.rotation.z += 0.01;
 }
 animate();
 
@@ -160,3 +167,18 @@ function processData(allText) {
         mostRecentTransactionDate = new Date(inputData[0][inputHeadersEnum.MostRecentTransaction]);
     }
 }
+
+Date.daysBetween = function( date1, date2 ) {
+    //Get 1 day in milliseconds
+    var one_day=1000*60*60*24;
+  
+    // Convert both dates to milliseconds
+    var date1_ms = date1.getTime();
+    var date2_ms = date2.getTime();
+  
+    // Calculate the difference in milliseconds
+    var difference_ms = date2_ms - date1_ms;
+      
+    // Convert back to days and return
+    return Math.round(difference_ms/one_day); 
+  }
