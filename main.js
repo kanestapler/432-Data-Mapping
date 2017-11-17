@@ -10,7 +10,7 @@ var distanceBetweenEarthAndMoon = earthRadius * 60.3;
 var distanceBetweenEarthAndSun = earthRadius * 23480.67;
 
 //Global Variables
-var inputData = [];
+var inputData;
 var inputHeadersEnum = Object.freeze({
     Balance: 'Balance',
     AccountType: 'Account Type',
@@ -116,57 +116,29 @@ scene.add(starFieldMesh);
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
-    //Earth spin rate is determined by account balance
-    if (inputData.length > 0) {
-        var earthSpin = inputData[0][inputHeadersEnum.Balance] * 0.000001;
-        earthMesh.rotation.y += earthSpin;
-        earthPivot.rotation.y -= earthSpin;
-    }
-    //If Checking Account then sun spins
-    if (inputData.length > 0 && inputData[0][inputHeadersEnum.AccountType].toLowerCase() === 'checking') {
-        sunMesh.rotation.y += 0.01;
-    }
-    //Moon orbit speed is determined by how long ago most recent transaction was (sooner==slower)
-    if (inputData.length > 0) {
-        var moonOrbitSpeed = Date.daysBetween(mostRecentTransactionDate, new Date());
-        earthPivot.rotation.z += 0.01 * moonOrbitSpeed;
-    }
+    // //Earth spin rate is determined by account balance
+    // if (inputData.length > 0) {
+    //     var earthSpin = inputData[0][inputHeadersEnum.Balance] * 0.000001;
+    //     earthMesh.rotation.y += earthSpin;
+    //     earthPivot.rotation.y -= earthSpin;
+    // }
+    // //If Checking Account then sun spins
+    // if (inputData.length > 0 && inputData[0][inputHeadersEnum.AccountType].toLowerCase() === 'checking') {
+    //     sunMesh.rotation.y += 0.01;
+    // }
+    // //Moon orbit speed is determined by how long ago most recent transaction was (sooner==slower)
+    // if (inputData.length > 0) {
+    //     var moonOrbitSpeed = Date.daysBetween(mostRecentTransactionDate, new Date());
+    //     earthPivot.rotation.z += 0.01 * moonOrbitSpeed;
+    // }
     //Moon spin
     moonMesh.rotation.y += 0.01;
 }
 animate();
 
 $(document).ready(function () {
-    $.ajax({
-        type: 'GET',
-        url: 'Bank_Account_Info.csv',
-        dataType: 'text',
-        success: function (data) {
-            processData(data);
-        }
-    });
+    inputData = createParkDataObject('ParkData.csv');
 });
-
-function processData(allText) {
-    var allTextLines = allText.split(/\r?\n/);
-    var headers = allTextLines[0].split(',');
-
-    for (var i = 1; i < allTextLines.length; i++) {
-        var data = allTextLines[i].split(',');
-        if (data.length == headers.length) {
-
-            var lineObject = {};
-            for (var j = 0; j < headers.length; j++) {
-                lineObject[headers[j]] = data[j];
-            }
-            inputData.push(lineObject);
-        }
-    }
-    postProcessing();
-    function postProcessing() {
-        mostRecentTransactionDate = new Date(inputData[0][inputHeadersEnum.MostRecentTransaction]);
-    }
-}
 
 Date.daysBetween = function( date1, date2 ) {
     //Get 1 day in milliseconds
