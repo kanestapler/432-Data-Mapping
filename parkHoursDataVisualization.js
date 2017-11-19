@@ -21,7 +21,7 @@ var parkDataHeadersEnum = Object.freeze({
 //Scene Setup
 var renderer = new THREE.WebGLRenderer();
 renderer.name = 'Renderer';
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(window.innerWidth-200, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 var scene = new THREE.Scene();
 scene.name = 'Park Data';
@@ -61,7 +61,8 @@ camera.position.z = 40;
 camera.lookAt(new THREE.Vector3(0, 0, 8));
 
 //Controls
-var controls = new THREE.OrbitControls(camera);
+var x = document.getElementById("parkSelectDiv");
+var controls = new THREE.OrbitControls(camera, x);
 var earthPosition = new THREE.Vector3(sunMesh.position.x, sunMesh.position.y, sunMesh.position.z);
 controls.target.x = sunMesh.position.x - 7;
 controls.target.y = sunMesh.position.y + 8.5;
@@ -104,7 +105,7 @@ function createParkDataObject(fileName) {
         url: fileName,
         dataType: 'text',
         success: function (data) {
-            processParkData(data, createPlanetsFromInputData);
+            processParkData(data);
         },
         error: function (error) {
             console.log('Error loading file');
@@ -112,7 +113,7 @@ function createParkDataObject(fileName) {
     });
 }
 
-function processParkData(allText, callBackFunction) {
+function processParkData(allText) {
     var allTextLines = allText.split(/\r?\n/);
     var headers = allTextLines[0].split(',');
     var outputData = [];
@@ -128,15 +129,67 @@ function processParkData(allText, callBackFunction) {
             outputData.push(lineObject);
         }
     }
-    inputData = outputData;
-    callBackFunction(outputData);
+    inputData = seperateIntoArrayByPark(outputData);
+    createPlanetsFromInputData(inputData);
+}
+
+function seperateIntoArrayByPark(datapoints) {
+    var outputObject = {
+        parkData: [],
+        parkNames: []
+    };
+
+    datapoints.forEach(function(datapoint) {
+        outputObject.parkNames.push(datapoint[parkDataHeadersEnum.parkName]);
+    });
+
+    outputObject.parkNames = uniq(outputObject.parkNames);
+
+    outputObject.parkNames.forEach(function(value, index) {
+        outputObject.parkData[index] = [];
+    });
+
+    datapoints.forEach(function(datapoint) {
+        outputObject.parkData[outputObject.parkNames.indexOf(datapoint[parkDataHeadersEnum.parkName])].push(datapoint);
+    });
+
+    return outputObject;
+
+    function uniq(a) {
+        var seen = {};
+        return a.filter(function(item) {
+            return seen.hasOwnProperty(item) ? false : (seen[item] = true);
+        });
+    }
 }
 
 //Dynamic Planet Creation
 function createPlanetsFromInputData(data) {
+    //Populate dropdown with park names from data.parkNames
+    var parkSelectDiv = document.getElementById("parkSelectDiv");
+    
+    //Create and append select list
+    var selectList = document.createElement("select");
+    selectList.id = "parkSelect";
+    parkSelectDiv.appendChild(selectList);
+    
+    //Create and append the options
+    for (var i = 0; i < data.parkNames.length; i++) {
+        var option = document.createElement("option");
+        option.value = data.parkNames[i];
+        option.text = data.parkNames[i];
+        selectList.appendChild(option);
+    }
+
+    //selectList.selectedIndex = 0;
+    createPlanetsByIndex(0);
+}
+
+function createPlanetsByIndex(index) {
     var distanceFromSunNormalizer = 100;
     var radiusNormalizer = 3000;
-    data.forEach(function (dataElement) {
+
+    inputData.parkData[index].forEach(function (dataElement) {
         //individual pivot for rotation
         var newPlanetPivot = new THREE.Object3D();
         newPlanetPivot.name = "Sun Pivot for " + dataElement[parkDataHeadersEnum.parkName];
